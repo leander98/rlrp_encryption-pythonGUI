@@ -5,9 +5,15 @@ Created on Sun Jul 23 03:35:45 2023
 @author: Leander
 """
 
+DEBUG = 1 #None
+
 from tkinter import *
 from tkinter import ttk
 from tkinter import scrolledtext
+
+from encrypt import encInData
+from encrypt import encOutData
+from encrypt import RlrpEncrypt
 
 class RlrpEncryptionGUI:
     def __init__(self, master):
@@ -71,15 +77,15 @@ class RlrpEncryptionGUI:
         clickedDataEncIn = StringVar()
         clickedDataEncIn.set("UTF-8")
         dropDataEncIn = OptionMenu(tabEncrypt, clickedDataEncIn, *dataTypeOptions, command=self.dataEncInEncoding).grid(column=1, row=0)
-        eDataEncIn = scrolledtext.ScrolledText(tabEncrypt, wrap=WORD, width=66, height=8)
-        eDataEncIn.grid(column=0, row=1, columnspan=2)
+        self.eDataEncIn = scrolledtext.ScrolledText(tabEncrypt, wrap=WORD, width=66, height=8)
+        self.eDataEncIn.grid(column=0, row=1, columnspan=2)
         btnEncrypt = Button(tabEncrypt, text='Encrypt', command=self.encrypt).grid(column=0, row=2, columnspan=2)
         Label(tabEncrypt, text='Encrypted data').grid(column=0, row=3)
         clickedDataEncOut = StringVar()
         clickedDataEncOut.set("UTF-8")
         dropDataEncOut = OptionMenu(tabEncrypt, clickedDataEncOut, *dataTypeOptions, command=self.dataEncOutEncoding).grid(column=1, row=3)
-        tDataEncOut = scrolledtext.ScrolledText(tabEncrypt, wrap=WORD, width=66, height=8)
-        tDataEncOut.grid(column=0, row=4, columnspan=2)
+        self.tDataEncOut = scrolledtext.ScrolledText(tabEncrypt, wrap=WORD, width=66, height=8)
+        self.tDataEncOut.grid(column=0, row=4, columnspan=2)
 
         # Decrypt tab
         #   Input datatype display
@@ -91,44 +97,62 @@ class RlrpEncryptionGUI:
         clickedDataDecIn = StringVar()
         clickedDataDecIn.set("UTF-8")
         dropDataDecIn = OptionMenu(tabDecrypt, clickedDataDecIn, *dataTypeOptions, command=self.dataDecInEncoding).grid(column=1, row=0)
-        eDataEncIn = scrolledtext.ScrolledText(tabDecrypt, wrap=WORD, width=66, height=8)
-        eDataEncIn.grid(column=0, row=1, columnspan=2)
+        self.eDataDecIn = scrolledtext.ScrolledText(tabDecrypt, wrap=WORD, width=66, height=8)
+        self.eDataDecIn.grid(column=0, row=1, columnspan=2)
         btnDecrypt = Button(tabDecrypt, text='Decrypt', command=self.decrypt).grid(column=0, row=2, columnspan=2)
         Label(tabDecrypt, text='Decrypted data').grid(column=0, row=3)
         clickedDataDecOut = StringVar()
         clickedDataDecOut.set("UTF-8")
         dropDataDecOut = OptionMenu(tabDecrypt, clickedDataDecOut, *dataTypeOptions, command=self.dataDecOutEncoding).grid(column=1, row=3)
-        tDataEncOut = scrolledtext.ScrolledText(tabDecrypt, wrap=WORD, width=66, height=8)
-        tDataEncOut.grid(column=0, row=4, columnspan=2)
+        self.tDataDecOut = scrolledtext.ScrolledText(tabDecrypt, wrap=WORD, width=66, height=8)
+        self.tDataDecOut.grid(column=0, row=4, columnspan=2)
 
     '''FUNCTIONS'''
     def confirmKey(self):
-        print("confirm")
-        print("sessionKey:", self.sessionKey.get())
-        print("privateKey:", self.privateKey.get())
-        print("lastKey:", self.lastKey.get())
+        TAG="RlrpEncryptionGUI.confirmKey"
+        if DEBUG: print(TAG, "confirm")
+        if DEBUG: print(TAG, "sessionKey:", self.sessionKey.get())
+        if DEBUG: print(TAG, "privateKey:", self.privateKey.get())
+        if DEBUG: print(TAG, "lastKey:", self.lastKey.get())
 
     def resetLastKey(self):
-        print("reset")
+        TAG="RlrpEncryptionGUI.resetLastKey"
+
         self.lastKey.set(self.sessionKey.get())
 
     def encrypt(self):
-        print("encrypt")
+        TAG="RlrpEncryptionGUI.encrypt"
+        if DEBUG: print(TAG, "self.eDataEncIn", bytearray(self.eDataEncIn.get("1.0",'end-1c'),'utf-8').hex())
+        if DEBUG: print(TAG, "self.eDataEncIn", self.eDataEncIn.get("1.0",'end-1c'))
+        if DEBUG: print(TAG, "lastKey", self.lastKey.get().encode())                       #interpret string as bytearray
+        if DEBUG: print(TAG, "privateKey", self.privateKey.get().encode())                 #interpret string as bytearray
+
+        input = encInData(self.eDataEncIn.get("1.0",'end-1c'), self.lastKey.get().encode(), self.privateKey.get().encode())
+        RlrpEncrypt()
+        output = RlrpEncrypt.encrypt(self, input)
+        self.tDataEncOut.delete('1.0', END)
+        self.tDataEncOut.insert(INSERT, bytes.fromhex(hex(output.data)[2:]).decode('unicode_escape'))   #hex(output.data)) //TODO align to encoding dropdown
+        self.lastKey.set(bytes.fromhex(f'{output.key:x}').decode('utf-8'))                              #hex(output.key))  //TODO align to encoding dropdown
 
     def decrypt(self):
-        print("decrypt")
+        TAG="RlrpEncryptionGUI.decrypt"
+        if DEBUG: print(TAG, "decrypt")    
 
     def dataEncInEncoding(self, value):
-        print("dataEncInEncoding", value)
+        TAG="RlrpEncryptionGUI.dataEncInEncoding"
+        if DEBUG: print(TAG, "dataEncInEncoding", value)
 
     def dataEncOutEncoding(self, value):
-        print("dataEncOutEncoding", value)
+        TAG="RlrpEncryptionGUI.dataEncOutEncoding"
+        if DEBUG: print(TAG, "dataEncOutEncoding", value)
 
     def dataDecInEncoding(self, value):
-        print("dataDecInEncoding", value)
+        TAG="RlrpEncryptionGUI.dataDecInEncoding"
+        if DEBUG: print(TAG, "dataDecInEncoding", value)
 
     def dataDecOutEncoding(self, value):
-        print("dataDecOutEncoding", value)
+        TAG="RlrpEncryptionGUI.dataDecOutEncoding"
+        if DEBUG: print(TAG, "dataDecOutEncoding", value)
 
 root = Tk()
 rlrpEncryptionGUI = RlrpEncryptionGUI(root)
